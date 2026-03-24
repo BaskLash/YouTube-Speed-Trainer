@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Speed Trainer",
+  "version": "1.0",
+  "description": "Gradually train yourself to watch YouTube videos at higher speeds",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png"
+    }
+  },
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}

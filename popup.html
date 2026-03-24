@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=320">
+  <title>Speed Trainer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 300px;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(165deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #00d4aa 0%, #00a080 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    /* Speed Display */
+    .speed-display {
+      background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(0, 160, 128, 0.05) 100%);
+      border: 1px solid rgba(0, 212, 170, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .speed-display::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(0, 212, 170, 0.05) 0%, transparent 60%);
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .speed-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #00d4aa;
+      margin-bottom: 8px;
+      position: relative;
+    }
+
+    .speed-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 48px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+      position: relative;
+      text-shadow: 0 0 30px rgba(0, 212, 170, 0.4);
+    }
+
+    .speed-value span {
+      font-size: 24px;
+      color: #00d4aa;
+      margin-left: 2px;
+    }
+
+    /* Speed Controls */
+    .speed-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .speed-btn {
+      flex: 1;
+      height: 44px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .speed-btn.decrease {
+      background: rgba(255, 82, 82, 0.15);
+      color: #ff5252;
+      border: 1px solid rgba(255, 82, 82, 0.3);
+    }
+
+    .speed-btn.decrease:hover {
+      background: rgba(255, 82, 82, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(255, 82, 82, 0.2);
+    }
+
+    .speed-btn.increase {
+      background: rgba(0, 212, 170, 0.15);
+      color: #00d4aa;
+      border: 1px solid rgba(0, 212, 170, 0.3);
+    }
+
+    .speed-btn.increase:hover {
+      background: rgba(0, 212, 170, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 212, 170, 0.2);
+    }
+
+    .speed-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    /* Settings Section */
+    .settings {
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .setting-label {
+      font-size: 13px;
+      color: #888;
+    }
+
+    .setting-label strong {
+      color: #ccc;
+      font-weight: 600;
+    }
+
+    .increment-selector {
+      display: flex;
+      gap: 6px;
+    }
+
+    .increment-btn {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .increment-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .increment-btn.active {
+      background: rgba(0, 212, 170, 0.2);
+      border-color: rgba(0, 212, 170, 0.4);
+      color: #00d4aa;
+    }
+
+    /* Reset Button */
+    .reset-btn {
+      width: 100%;
+      height: 38px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #666;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .reset-btn:hover {
+      background: rgba(255, 82, 82, 0.1);
+      border-color: rgba(255, 82, 82, 0.3);
+      color: #ff5252;
+    }
+
+    /* Status indicator */
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 11px;
+      color: #555;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #333;
+    }
+
+    .status-dot.active {
+      background: #00d4aa;
+      box-shadow: 0 0 8px rgba(0, 212, 170, 0.6);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Info tooltip */
+    .info {
+      font-size: 10px;
+      color: #444;
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">⚡</div>
+      <div>
+        <div class="title">Speed Trainer</div>
+        <div class="subtitle">Train your brain for faster playback</div>
+      </div>
+    </div>
+
+    <div class="speed-display">
+      <div class="speed-label">Current Speed</div>
+      <div class="speed-value"><span id="speed-int">1</span>.<span id="speed-dec">00</span><span>×</span></div>
+    </div>
+
+    <div class="speed-controls">
+      <button class="speed-btn decrease" id="btn-decrease">−</button>
+      <button class="speed-btn increase" id="btn-increase">+</button>
+    </div>
+
+    <div class="settings">
+      <div class="setting-row">
+        <div class="setting-label"><strong>Step</strong> per video</div>
+        <div class="increment-selector">
+          <button class="increment-btn" data-value="0.05">0.05</button>
+          <button class="increment-btn" data-value="0.1">0.10</button>
+          <button class="increment-btn" data-value="0.2">0.20</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="btn-reset">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+      Reset to 1.0×
+    </button>
+
+    <div class="status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Not on YouTube</span>
+    </div>
+
+    <div class="info">
+      Watch 80% of a video to unlock the next speed level
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
