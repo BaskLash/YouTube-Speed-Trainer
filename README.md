@@ -1,66 +1,73 @@
 # YouTube Speed Trainer
 
-A Chrome extension that helps you gradually train yourself to watch YouTube videos at higher speeds.
+A Chrome extension that gradually increases YouTube video playback speed to help you train your brain to process faster content.
 
-## ✨ Features
+## Features
 
-- **Automatic Speed Progression**: Each completed video automatically increases your playback speed
-- **Smart Completion Detection**: Speed only increases after watching 80%+ of a video
-- **Manual Controls**: Adjust speed anytime via the popup
-- **Persistent Settings**: Your speed carries over between videos and sessions
-- **Clean UI**: Minimal, intuitive interface
+- **Automatic Speed Progression**: Each completed video increases speed for the next one
+- **Learning-Based**: Only increases speed after watching 80% of a video (minimum 1 minute)
+- **Manual Control**: Adjust speed anytime via the popup
+- **Configurable Step Size**: Choose between +0.05, +0.10, or +0.20 increments
+- **Persistent Settings**: Your speed carries over between sessions
+- **On-Screen Notifications**: See when you've unlocked the next speed level
 
-## 🚀 Installation
+## Installation
 
 1. Open Chrome and go to `chrome://extensions/`
-2. Enable **Developer mode** (toggle in top right)
-3. Click **Load unpacked**
-4. Select the `youtube-speed-trainer` folder
+2. Enable "Developer mode" (toggle in the top right)
+3. Click "Load unpacked"
+4. Select this folder (`youtube-speed-trainer`)
 5. The extension icon will appear in your toolbar
 
-## 📖 How It Works
+## Usage
 
-1. **Start watching**: The extension applies your current speed to any YouTube video
-2. **Complete videos**: Watch at least 80% of a video to trigger a speed increase
-3. **Gradual progression**: Each completion bumps your speed by the configured increment
-4. **Train your brain**: Over time, you'll comfortably watch videos at 1.5×, 2×, or even higher!
+### Automatic Training
+1. Just watch YouTube videos normally
+2. When you watch 80% of a video (longer than 1 minute), the next video will play slightly faster
+3. Over time, you'll naturally adapt to higher speeds
 
-## ⚙️ Settings
+### Manual Control
+- Click the extension icon to open the popup
+- Use **−** and **+** buttons to adjust speed immediately
+- Choose your preferred step size (0.05, 0.10, or 0.20)
+- Click "Reset" to go back to 1.0×
 
-Click the extension icon to open the popup:
+### Speed Limits
+- Minimum: 0.5×
+- Maximum: 4.0×
 
-- **Speed Display**: Shows your current playback speed
-- **+/- Buttons**: Manually adjust speed instantly
-- **Increment**: Choose how much speed increases after each video (0.05× to 0.25×)
-- **Reset**: Return to 1.0× starting speed
+## How It Works
 
-## 🎯 Tips
+The extension tracks your viewing progress. When you watch at least 80% of a video that's longer than 1 minute, it considers the video "completed" and increments your speed for the next video.
 
-- Start with a small increment (0.05×) for gradual adaptation
-- Use larger increments (0.15×-0.25×) if you want faster progression
-- Manual adjustments update your baseline for future videos
-- The extension works on all YouTube videos, including embedded ones
+This gradual approach helps your brain adapt without the jarring experience of jumping directly to 2× or higher speeds.
 
-## 📁 Files
+## Files
 
 ```
 youtube-speed-trainer/
 ├── manifest.json    # Extension configuration
-├── content.js       # Video speed control logic
-├── popup.html       # Extension popup UI
-├── popup.js         # Popup interaction logic
-├── icon16.png       # Small icon
-├── icon48.png       # Medium icon
-└── icon128.png      # Large icon
+├── content.js       # YouTube page integration
+├── popup.html       # Control panel UI
+├── popup.js         # Control panel logic
+├── icon.png         # Extension icon
+└── README.md        # This file
 ```
 
-## 🔧 Technical Details
+## Tips
 
-- **Manifest V3**: Uses the latest Chrome extension format
-- **Chrome Storage**: Syncs settings across devices
-- **MutationObserver**: Detects YouTube's dynamic video loading
-- **Event-based**: Efficient completion detection without polling
+- Start with the 0.05 increment for a gentle progression
+- Use 0.10 or 0.20 if you want to train faster
+- Don't hesitate to manually decrease speed if it gets uncomfortable
+- The goal is gradual adaptation, not instant speed
 
-## 📝 License
+## Privacy
 
-MIT License - Feel free to modify and share!
+This extension:
+- Does NOT collect any data
+- Does NOT connect to external servers
+- Only stores your speed settings locally in Chrome
+
+---
+
+Made with ⚡ for faster learning

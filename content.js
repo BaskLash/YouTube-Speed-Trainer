@@ -44,22 +44,41 @@
     chrome.storage.local.set({ currentSpeed: speed });
   }
 
-  // Get the video element
+  // Get the video element (with fallbacks)
   function getVideo() {
-    return document.querySelector('video.html5-main-video') || document.querySelector('video');
+    // Try YouTube's main video first
+    return document.querySelector('video.html5-main-video') 
+        || document.querySelector('video.video-stream')
+        || document.querySelector('#movie_player video')
+        || document.querySelector('video');
   }
 
-  // Apply speed to video
-  function applySpeed(video) {
-    if (!video) return;
+  // Apply speed to video immediately
+  function applySpeed(video, speed) {
+    if (!video) return false;
     
-    const targetSpeed = Math.max(DEFAULTS.minSpeed, Math.min(DEFAULTS.maxSpeed, state.currentSpeed));
+    const targetSpeed = Math.max(DEFAULTS.minSpeed, Math.min(DEFAULTS.maxSpeed, speed ?? state.currentSpeed));
     
     if (video.playbackRate !== targetSpeed) {
       video.playbackRate = targetSpeed;
       state.lastAppliedSpeed = targetSpeed;
       console.log(`[Speed Trainer] Speed set to ${targetSpeed.toFixed(2)}x`);
+      return true;
     }
+    return false;
+  }
+
+  // Force apply speed (used for real-time updates from popup)
+  function forceApplySpeed(speed) {
+    const video = getVideo();
+    if (video) {
+      video.playbackRate = speed;
+      state.currentSpeed = speed;
+      state.lastAppliedSpeed = speed;
+      console.log(`[Speed Trainer] Speed forced to ${speed.toFixed(2)}x`);
+      return true;
+    }
+    return false;
   }
 
   // Check video completion and increment speed if needed
@@ -144,33 +163,54 @@
     
     const video = getVideo();
     if (video) {
-      applySpeed(video);
+      applySpeed(video, state.currentSpeed);
       checkCompletion(video);
     }
   }
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('[Speed Trainer] Received message:', message.type);
+    
+    const video = getVideo();
+    
     if (message.type === 'GET_STATE') {
-      const video = getVideo();
       sendResponse({
         currentSpeed: state.currentSpeed,
         increment: state.increment,
         actualSpeed: video ? video.playbackRate : null,
-        isPlaying: video ? !video.paused : false
+        isPlaying: video ? !video.paused : false,
+        hasVideo: !!video,
+        videoId: state.videoId
       });
+      
     } else if (message.type === 'SET_SPEED') {
       const newSpeed = Math.max(DEFAULTS.minSpeed, Math.min(DEFAULTS.maxSpeed, message.speed));
-      saveSpeed(newSpeed);
-      const video = getVideo();
+      state.currentSpeed = newSpeed;
+      chrome.storage.local.set({ currentSpeed: newSpeed });
+      
+      // Apply immediately to video
+      let success = false;
+      let actualSpeed = null;
+      
       if (video) {
         video.playbackRate = newSpeed;
+        state.lastAppliedSpeed = newSpeed;
+        actualSpeed = video.playbackRate;
+        success = Math.abs(actualSpeed - newSpeed) < 0.01;
+        console.log(`[Speed Trainer] Speed set to ${newSpeed}x (actual: ${actualSpeed}x)`);
+      } else {
+        console.log(`[Speed Trainer] Speed saved to ${newSpeed}x (no video element)`);
+        success = true; // Saved successfully, will apply when video loads
       }
-      sendResponse({ success: true, currentSpeed: newSpeed });
+      
+      sendResponse({ success, currentSpeed: newSpeed, actualSpeed });
+      
     } else if (message.type === 'SET_INCREMENT') {
       state.increment = message.increment;
       chrome.storage.local.set({ increment: message.increment });
       sendResponse({ success: true });
+      
     } else if (message.type === 'RESET') {
       state.currentSpeed = DEFAULTS.currentSpeed;
       state.increment = DEFAULTS.increment;
@@ -178,13 +218,22 @@
         currentSpeed: DEFAULTS.currentSpeed, 
         increment: DEFAULTS.increment 
       });
-      const video = getVideo();
+      
+      // Apply immediately
+      let success = false;
       if (video) {
         video.playbackRate = DEFAULTS.currentSpeed;
+        state.lastAppliedSpeed = DEFAULTS.currentSpeed;
+        success = true;
       }
-      sendResponse({ success: true });
+      sendResponse({ success, currentSpeed: DEFAULTS.currentSpeed });
+      
+    } else if (message.type === 'PING') {
+      // Simple ping to check if content script is alive
+      sendResponse({ alive: true, hasVideo: !!video });
     }
-    return true;
+    
+    return true; // Keep message channel open for async response
   });
 
   // Initialize
