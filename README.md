@@ -1,72 +1,107 @@
 # YouTube Speed Trainer
 
-A Chrome extension that gradually increases YouTube video playback speed to help you train your brain to process faster content.
+A Chrome extension that helps you gradually train yourself to watch YouTube videos at higher speeds.
 
-## Features
+## ✨ Features
 
-- **Automatic Speed Progression**: Each completed video increases speed for the next one
-- **Learning-Based**: Only increases speed after watching 80% of a video (minimum 1 minute)
-- **Manual Control**: Adjust speed anytime via the popup
-- **Configurable Step Size**: Choose between +0.05, +0.10, or +0.20 increments
-- **Persistent Settings**: Your speed carries over between sessions
-- **On-Screen Notifications**: See when you've unlocked the next speed level
+- **Time-Based Progression**: Speed increases based on total watch time, not per video
+- **Custom Increments**: Choose preset values (0.05, 0.10, 0.20) or enter any custom value
+- **Visual Progress Bar**: See your progress toward the next speed level
+- **Instant Speed Control**: Adjust speed anytime via the popup
+- **Persistent Settings**: Your progress and settings sync across sessions
 
-## Installation
+## 🚀 Installation
 
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in the top right)
-3. Click "Load unpacked"
-4. Select this folder (`youtube-speed-trainer`)
-5. The extension icon will appear in your toolbar
+1. Download and unzip the extension
+2. Open Chrome → `chrome://extensions/`
+3. Enable **Developer mode** (top right toggle)
+4. Click **Load unpacked** → select the extension folder
+5. Start watching YouTube videos!
 
-## Usage
+## 📖 How It Works
 
-### Automatic Training
-1. Just watch YouTube videos normally
-2. When you watch 80% of a video (longer than 1 minute), the next video will play slightly faster
-3. Over time, you'll naturally adapt to higher speeds
+### Time-Based Progression
 
-### Manual Control
-- Click the extension icon to open the popup
-- Use **−** and **+** buttons to adjust speed immediately
-- Choose your preferred step size (0.05, 0.10, or 0.20)
-- Click "Reset" to go back to 1.0×
+Instead of increasing speed per video (unfair for short clips), the extension tracks your **total watch time**:
 
-### Speed Limits
-- Minimum: 0.5×
-- Maximum: 4.0×
+| Watch Time | Effect |
+|------------|--------|
+| 5 minutes  | Progress bar fills |
+| 10 minutes | **Level up!** Speed increases |
+| 15 minutes | Another level up |
+| etc.       | Continues until max speed |
 
-## How It Works
+**Why this is better:**
+- Watching a 2-hour documentary = 12 level-ups (at 10min threshold)
+- Watching twelve 10-second clips = still need real watch time
+- Fairer, more consistent progression
 
-The extension tracks your viewing progress. When you watch at least 80% of a video that's longer than 1 minute, it considers the video "completed" and increments your speed for the next video.
+### Custom Increments
 
-This gradual approach helps your brain adapt without the jarring experience of jumping directly to 2× or higher speeds.
+Not everyone learns at the same pace:
 
-## Files
+| User Type | Recommended Increment |
+|-----------|----------------------|
+| Careful learner | 0.02 - 0.05 |
+| Average user | 0.05 - 0.10 |
+| Speed demon | 0.15 - 0.25 |
+
+Enter any value from 0.01 to 1.00 in the custom input field.
+
+## ⚙️ Settings
+
+| Setting | Options | Default |
+|---------|---------|---------|
+| Step size | 0.01 - 1.00 | 0.05 |
+| Level up every | 5m, 10m, 15m, 30m | 10 minutes |
+
+## 🎯 Tips
+
+1. **Start conservative**: Use small increments (0.03-0.05) if you're new
+2. **Longer thresholds**: Choose 15-30 minute thresholds for podcasts/lectures
+3. **Shorter thresholds**: Choose 5 minute thresholds for quick adaptation
+4. **Manual adjustments**: Use +/- buttons for immediate changes
+
+## 📁 Files
 
 ```
 youtube-speed-trainer/
 ├── manifest.json    # Extension configuration
-├── content.js       # YouTube page integration
-├── popup.html       # Control panel UI
-├── popup.js         # Control panel logic
-├── icon.png         # Extension icon
-└── README.md        # This file
+├── content.js       # Video control & time tracking
+├── popup.html       # Extension popup UI
+├── popup.js         # Popup logic
+└── icon*.png        # Extension icons
 ```
 
-## Tips
+## 🔧 Technical Details
 
-- Start with the 0.05 increment for a gentle progression
-- Use 0.10 or 0.20 if you want to train faster
-- Don't hesitate to manually decrease speed if it gets uncomfortable
-- The goal is gradual adaptation, not instant speed
+- **Manifest V3**: Latest Chrome extension format
+- **Time Tracking**: Accurate to 0.5 seconds, ignores background tabs
+- **Storage**: chrome.storage.local for persistence
+- **Speed Range**: 0.5× to 4.0×
 
-## Privacy
+## 🔒 Privacy
 
 This extension:
 - Does NOT collect any data
 - Does NOT connect to external servers
-- Only stores your speed settings locally in Chrome
+- Only stores your settings locally in Chrome
+
+## 📝 Changelog
+
+### v1.2
+- ✨ Time-based progression (replaces per-video)
+- ✨ Custom increment input
+- ✨ Visual progress bar
+- 🐛 Fixed YouTube detection issues
+- 🐛 Fixed real-time speed updates
+
+### v1.1  
+- Fixed popup not detecting YouTube pages
+- Added real-time speed changes without reload
+
+### v1.0
+- Initial release
 
 ---
 

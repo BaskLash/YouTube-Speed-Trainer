@@ -30,8 +30,8 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
@@ -65,9 +65,9 @@
       background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(0, 160, 128, 0.05) 100%);
       border: 1px solid rgba(0, 212, 170, 0.2);
       border-radius: 16px;
-      padding: 20px;
+      padding: 18px;
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       position: relative;
       overflow: hidden;
     }
@@ -89,17 +89,17 @@
     }
 
     .speed-label {
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 1.5px;
       color: #00d4aa;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       position: relative;
     }
 
     .speed-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 48px;
+      font-size: 44px;
       font-weight: 700;
       color: #fff;
       line-height: 1;
@@ -108,7 +108,7 @@
     }
 
     .speed-value span {
-      font-size: 24px;
+      font-size: 22px;
       color: #00d4aa;
       margin-left: 2px;
     }
@@ -117,7 +117,7 @@
     .speed-controls {
       display: flex;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .speed-btn {
@@ -167,18 +167,23 @@
     .settings {
       background: rgba(255,255,255,0.03);
       border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
     }
 
     .setting-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .setting-row:last-child {
+      margin-bottom: 0;
     }
 
     .setting-label {
-      font-size: 13px;
+      font-size: 12px;
       color: #888;
     }
 
@@ -187,19 +192,28 @@
       font-weight: 600;
     }
 
+    .setting-label small {
+      display: block;
+      font-size: 10px;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    /* Increment selector with presets + custom */
     .increment-selector {
       display: flex;
-      gap: 6px;
+      gap: 5px;
+      align-items: center;
     }
 
     .increment-btn {
-      padding: 6px 12px;
+      padding: 5px 10px;
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 6px;
       color: #888;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
@@ -215,16 +229,129 @@
       color: #00d4aa;
     }
 
+    /* Custom increment input */
+    .custom-increment {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .custom-increment input {
+      width: 50px;
+      padding: 5px 6px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .custom-increment input:focus {
+      outline: none;
+      border-color: rgba(0, 212, 170, 0.5);
+      background: rgba(0, 212, 170, 0.1);
+    }
+
+    .custom-increment input.active {
+      border-color: rgba(0, 212, 170, 0.5);
+      background: rgba(0, 212, 170, 0.15);
+    }
+
+    /* Time threshold selector */
+    .time-selector {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .time-btn {
+      padding: 5px 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .time-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .time-btn.active {
+      background: rgba(0, 212, 170, 0.2);
+      border-color: rgba(0, 212, 170, 0.4);
+      color: #00d4aa;
+    }
+
+    /* Progress bar for watch time */
+    .progress-section {
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .progress-label {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .progress-label strong {
+      color: #00d4aa;
+      font-weight: 600;
+    }
+
+    .progress-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #00d4aa;
+    }
+
+    .progress-bar-container {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00d4aa, #00a080);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-hint {
+      font-size: 9px;
+      color: #555;
+      margin-top: 6px;
+      text-align: center;
+    }
+
     /* Reset Button */
     .reset-btn {
       width: 100%;
-      height: 38px;
+      height: 36px;
       background: transparent;
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px;
       color: #666;
       font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -246,10 +373,10 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      margin-top: 16px;
-      padding-top: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
       border-top: 1px solid rgba(255,255,255,0.05);
-      font-size: 11px;
+      font-size: 10px;
       color: #555;
     }
 
@@ -271,13 +398,51 @@
       50% { opacity: 0.5; }
     }
 
-    /* Info tooltip */
-    .info {
+    /* Toggle switch for progression mode */
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-switch.active {
+      background: rgba(0, 212, 170, 0.3);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #666;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-switch.active::after {
+      left: 18px;
+      background: #00d4aa;
+    }
+
+    .mode-label {
       font-size: 10px;
-      color: #444;
-      text-align: center;
-      margin-top: 12px;
-      line-height: 1.5;
+      color: #666;
+    }
+
+    .mode-label.active {
+      color: #00d4aa;
     }
   </style>
 </head>
@@ -301,13 +466,44 @@
       <button class="speed-btn increase" id="btn-increase">+</button>
     </div>
 
+    <!-- Progress toward next speed increase -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span class="progress-label">Progress to <strong>next level</strong></span>
+        <span class="progress-time" id="progress-time">0:00 / 10:00</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
+      </div>
+      <div class="progress-hint" id="progress-hint">Watch videos to fill the bar and level up</div>
+    </div>
+
     <div class="settings">
+      <!-- Increment setting -->
       <div class="setting-row">
-        <div class="setting-label"><strong>Step</strong> per video</div>
+        <div class="setting-label">
+          <strong>Step</strong> size
+        </div>
         <div class="increment-selector">
           <button class="increment-btn" data-value="0.05">0.05</button>
           <button class="increment-btn" data-value="0.1">0.10</button>
           <button class="increment-btn" data-value="0.2">0.20</button>
+          <div class="custom-increment">
+            <input type="text" id="custom-increment" placeholder="0.07" maxlength="4">
+          </div>
+        </div>
+      </div>
+
+      <!-- Time threshold setting -->
+      <div class="setting-row">
+        <div class="setting-label">
+          <strong>Level up</strong> every
+        </div>
+        <div class="time-selector">
+          <button class="time-btn" data-value="300">5m</button>
+          <button class="time-btn" data-value="600">10m</button>
+          <button class="time-btn" data-value="900">15m</button>
+          <button class="time-btn" data-value="1800">30m</button>
         </div>
       </div>
     </div>
@@ -317,16 +513,12 @@
         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
         <path d="M3 3v5h5"/>
       </svg>
-      Reset to 1.0×
+      Reset All
     </button>
 
     <div class="status">
       <div class="status-dot" id="status-dot"></div>
       <span id="status-text">Not on YouTube</span>
-    </div>
-
-    <div class="info">
-      Watch 80% of a video to unlock the next speed level
     </div>
   </div>
 

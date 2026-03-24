@@ -1,18 +1,40 @@
 // YouTube Speed Trainer - Popup Script
+// Supports custom increments and time-based progression
 
 const DEFAULTS = {
   currentSpeed: 1.0,
   increment: 0.05,
   minSpeed: 0.5,
-  maxSpeed: 4.0
+  maxSpeed: 4.0,
+  timeThreshold: 600,      // 10 minutes in seconds
+  watchedTime: 0           // Cumulative watch time in seconds
 };
+
+const PRESET_INCREMENTS = [0.05, 0.1, 0.2];
 
 let currentState = {
   speed: DEFAULTS.currentSpeed,
   increment: DEFAULTS.increment,
+  timeThreshold: DEFAULTS.timeThreshold,
+  watchedTime: DEFAULTS.watchedTime,
   isOnYouTube: false,
   tabId: null
 };
+
+// Format seconds as M:SS or H:MM:SS
+function formatTime(seconds) {
+  seconds = Math.floor(seconds);
+  if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+}
 
 // Update speed display
 function updateSpeedDisplay(speed) {
@@ -26,12 +48,56 @@ function updateSpeedDisplay(speed) {
   speedDec.textContent = decPart.toString().padStart(2, '0');
 }
 
-// Update increment buttons
-function updateIncrementButtons(activeIncrement) {
+// Update increment buttons (including custom input)
+function updateIncrementUI(activeIncrement) {
+  const customInput = document.getElementById('custom-increment');
+  const isPreset = PRESET_INCREMENTS.some(p => Math.abs(p - activeIncrement) < 0.001);
+  
+  // Update preset buttons
   document.querySelectorAll('.increment-btn').forEach(btn => {
     const value = parseFloat(btn.dataset.value);
     btn.classList.toggle('active', Math.abs(value - activeIncrement) < 0.001);
   });
+  
+  // Update custom input
+  if (!isPreset) {
+    customInput.value = activeIncrement.toFixed(2).replace(/^0\./, '.');
+    customInput.classList.add('active');
+  } else {
+    customInput.value = '';
+    customInput.classList.remove('active');
+  }
+}
+
+// Update time threshold buttons
+function updateTimeThresholdUI(activeThreshold) {
+  document.querySelectorAll('.time-btn').forEach(btn => {
+    const value = parseInt(btn.dataset.value);
+    btn.classList.toggle('active', value === activeThreshold);
+  });
+}
+
+// Update progress bar and time display
+function updateProgressUI(watchedTime, threshold) {
+  const progressBar = document.getElementById('progress-bar');
+  const progressTime = document.getElementById('progress-time');
+  const progressHint = document.getElementById('progress-hint');
+  
+  const progress = Math.min(100, (watchedTime / threshold) * 100);
+  const remaining = Math.max(0, threshold - watchedTime);
+  
+  progressBar.style.width = `${progress}%`;
+  progressTime.textContent = `${formatTime(watchedTime)} / ${formatTime(threshold)}`;
+  
+  if (progress >= 100) {
+    progressHint.textContent = '🎉 Level up! Speed will increase on next video';
+  } else if (progress >= 75) {
+    progressHint.textContent = `Almost there! ${formatTime(remaining)} to go`;
+  } else if (progress >= 50) {
+    progressHint.textContent = `Halfway! Keep watching`;
+  } else {
+    progressHint.textContent = `Watch videos to fill the bar and level up`;
+  }
 }
 
 // Update status indicator
@@ -48,28 +114,25 @@ function updateStatus(isOnYouTube, isPlaying, statusMessage) {
   }
 }
 
-// Check if URL is a YouTube page (improved detection)
+// Check if URL is a YouTube page
 function isYouTubeUrl(url) {
   if (!url) return false;
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.toLowerCase();
-    // Match youtube.com, www.youtube.com, m.youtube.com, music.youtube.com
-    return hostname === 'youtube.com' || 
-           hostname.endsWith('.youtube.com');
+    return hostname === 'youtube.com' || hostname.endsWith('.youtube.com');
   } catch {
     return false;
   }
 }
 
-// Inject content script if needed (for cases where page loaded before extension)
+// Inject content script if needed
 async function ensureContentScriptInjected(tabId) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId: tabId },
       files: ['content.js']
     });
-    // Wait a bit for the script to initialize
     await new Promise(r => setTimeout(r, 100));
     return true;
   } catch (e) {
@@ -78,24 +141,18 @@ async function ensureContentScriptInjected(tabId) {
   }
 }
 
-// Send message to content script with retry and auto-injection
+// Send message to content script with retry
 async function sendToContent(message, retries = 3) {
-  if (!currentState.tabId) {
-    return null;
-  }
+  if (!currentState.tabId) return null;
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await chrome.tabs.sendMessage(currentState.tabId, message);
       return response;
     } catch (e) {
-      console.log(`Attempt ${attempt + 1} failed:`, e.message);
-      
       if (attempt === 0 && currentState.isOnYouTube) {
-        // First failure - try to inject content script
         await ensureContentScriptInjected(currentState.tabId);
       } else if (attempt < retries) {
-        // Wait and retry
         await new Promise(r => setTimeout(r, 150 * (attempt + 1)));
       }
     }
@@ -105,7 +162,6 @@ async function sendToContent(message, retries = 3) {
 
 // Load state from storage and content script
 async function loadState() {
-  // Get the active tab first
   let tab;
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -123,16 +179,10 @@ async function loadState() {
     return;
   }
   
-  // Store tab ID
   currentState.tabId = tab.id;
-  
-  // Check if we're on YouTube using the URL
-  // Note: tab.url requires "tabs" permission in manifest
   const url = tab.url || '';
   const onYouTube = isYouTubeUrl(url);
   currentState.isOnYouTube = onYouTube;
-  
-  console.log('Tab URL:', url, 'Is YouTube:', onYouTube);
   
   if (!onYouTube) {
     updateStatus(false, false);
@@ -140,19 +190,22 @@ async function loadState() {
     return;
   }
   
-  // We're on YouTube - try to get state from content script
   updateStatus(true, false, 'Connecting...');
-  
   const contentState = await sendToContent({ type: 'GET_STATE' });
   
   if (contentState) {
     currentState.speed = contentState.currentSpeed;
     currentState.increment = contentState.increment;
+    currentState.timeThreshold = contentState.timeThreshold;
+    currentState.watchedTime = contentState.watchedTime;
+    
     updateSpeedDisplay(currentState.speed);
-    updateIncrementButtons(currentState.increment);
-    updateStatus(true, contentState.isPlaying, contentState.hasVideo ? (contentState.isPlaying ? 'Playing' : 'Ready') : 'No video');
+    updateIncrementUI(currentState.increment);
+    updateTimeThresholdUI(currentState.timeThreshold);
+    updateProgressUI(currentState.watchedTime, currentState.timeThreshold);
+    updateStatus(true, contentState.isPlaying, 
+      contentState.hasVideo ? (contentState.isPlaying ? 'Playing' : 'Ready') : 'No video');
   } else {
-    // Content script not responding - load from storage but show as on YouTube
     loadFromStorage();
     updateStatus(true, false, 'Refresh page to activate');
   }
@@ -160,11 +213,16 @@ async function loadState() {
 
 // Load from storage (fallback)
 function loadFromStorage() {
-  chrome.storage.local.get(['currentSpeed', 'increment'], (result) => {
+  chrome.storage.local.get(['currentSpeed', 'increment', 'timeThreshold', 'watchedTime'], (result) => {
     currentState.speed = result.currentSpeed ?? DEFAULTS.currentSpeed;
     currentState.increment = result.increment ?? DEFAULTS.increment;
+    currentState.timeThreshold = result.timeThreshold ?? DEFAULTS.timeThreshold;
+    currentState.watchedTime = result.watchedTime ?? DEFAULTS.watchedTime;
+    
     updateSpeedDisplay(currentState.speed);
-    updateIncrementButtons(currentState.increment);
+    updateIncrementUI(currentState.increment);
+    updateTimeThresholdUI(currentState.timeThreshold);
+    updateProgressUI(currentState.watchedTime, currentState.timeThreshold);
   });
 }
 
@@ -175,64 +233,87 @@ async function changeSpeed(delta) {
     Math.min(DEFAULTS.maxSpeed, currentState.speed + delta)
   );
   
-  // Round to avoid floating point issues
   const roundedSpeed = Math.round(newSpeed * 100) / 100;
-  
   if (roundedSpeed === currentState.speed) return;
   
   currentState.speed = roundedSpeed;
   updateSpeedDisplay(roundedSpeed);
-  
-  // Update in storage first (always works)
   chrome.storage.local.set({ currentSpeed: roundedSpeed });
   
-  // Update content script immediately if on YouTube
   if (currentState.isOnYouTube && currentState.tabId) {
     const response = await sendToContent({ type: 'SET_SPEED', speed: roundedSpeed });
     if (response?.success) {
-      console.log(`Speed updated to ${roundedSpeed}x (actual: ${response.actualSpeed}x)`);
       updateStatus(true, true, `Speed: ${roundedSpeed.toFixed(2)}×`);
-      // Reset status after a moment
       setTimeout(() => updateStatus(true, true, 'Playing'), 1000);
     } else {
-      console.log('Speed saved but content script not responding');
       updateStatus(true, false, 'Speed saved (refresh to apply)');
     }
   }
 }
 
-// Set increment
+// Set increment (preset or custom)
 async function setIncrement(value) {
-  currentState.increment = value;
-  updateIncrementButtons(value);
+  // Validate and clamp
+  value = Math.max(0.01, Math.min(1.0, value));
+  value = Math.round(value * 100) / 100;
   
-  // Update in storage
+  currentState.increment = value;
+  updateIncrementUI(value);
   chrome.storage.local.set({ increment: value });
   
-  // Update content script
   if (currentState.isOnYouTube && currentState.tabId) {
     await sendToContent({ type: 'SET_INCREMENT', increment: value });
   }
 }
 
-// Reset to defaults
+// Set time threshold
+async function setTimeThreshold(seconds) {
+  currentState.timeThreshold = seconds;
+  updateTimeThresholdUI(seconds);
+  updateProgressUI(currentState.watchedTime, seconds);
+  chrome.storage.local.set({ timeThreshold: seconds });
+  
+  if (currentState.isOnYouTube && currentState.tabId) {
+    await sendToContent({ type: 'SET_TIME_THRESHOLD', timeThreshold: seconds });
+  }
+}
+
+// Reset all to defaults
 async function reset() {
   currentState.speed = DEFAULTS.currentSpeed;
   currentState.increment = DEFAULTS.increment;
+  currentState.timeThreshold = DEFAULTS.timeThreshold;
+  currentState.watchedTime = DEFAULTS.watchedTime;
   
   updateSpeedDisplay(DEFAULTS.currentSpeed);
-  updateIncrementButtons(DEFAULTS.increment);
+  updateIncrementUI(DEFAULTS.increment);
+  updateTimeThresholdUI(DEFAULTS.timeThreshold);
+  updateProgressUI(0, DEFAULTS.timeThreshold);
   
-  // Update storage
   chrome.storage.local.set({
     currentSpeed: DEFAULTS.currentSpeed,
-    increment: DEFAULTS.increment
+    increment: DEFAULTS.increment,
+    timeThreshold: DEFAULTS.timeThreshold,
+    watchedTime: 0
   });
   
-  // Update content script
   if (currentState.isOnYouTube && currentState.tabId) {
     await sendToContent({ type: 'RESET' });
   }
+}
+
+// Parse custom increment value
+function parseCustomIncrement(value) {
+  // Handle values like ".05", "0.05", "5" (interpreted as 0.05)
+  let parsed = parseFloat(value);
+  if (isNaN(parsed)) return null;
+  
+  // If user typed just a number like "5" or "10", interpret as hundredths
+  if (parsed >= 1 && !value.includes('.')) {
+    parsed = parsed / 100;
+  }
+  
+  return parsed;
 }
 
 // Initialize
@@ -248,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
     changeSpeed(currentState.increment);
   });
   
-  // Increment buttons
+  // Preset increment buttons
   document.querySelectorAll('.increment-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const value = parseFloat(btn.dataset.value);
@@ -256,6 +337,53 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
+  // Custom increment input
+  const customInput = document.getElementById('custom-increment');
+  
+  customInput.addEventListener('focus', () => {
+    // Deactivate preset buttons when focusing custom input
+    document.querySelectorAll('.increment-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+  });
+  
+  customInput.addEventListener('blur', () => {
+    const parsed = parseCustomIncrement(customInput.value);
+    if (parsed !== null && parsed >= 0.01 && parsed <= 1.0) {
+      setIncrement(parsed);
+    } else if (customInput.value.trim() !== '') {
+      // Invalid input - revert to current state
+      updateIncrementUI(currentState.increment);
+    }
+  });
+  
+  customInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      customInput.blur();
+    }
+  });
+  
+  // Time threshold buttons
+  document.querySelectorAll('.time-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const value = parseInt(btn.dataset.value);
+      setTimeThreshold(value);
+    });
+  });
+  
   // Reset button
   document.getElementById('btn-reset').addEventListener('click', reset);
+  
+  // Periodic progress update while popup is open
+  setInterval(async () => {
+    if (currentState.isOnYouTube && currentState.tabId) {
+      const state = await sendToContent({ type: 'GET_STATE' });
+      if (state) {
+        currentState.watchedTime = state.watchedTime;
+        currentState.speed = state.currentSpeed;
+        updateProgressUI(state.watchedTime, currentState.timeThreshold);
+        updateSpeedDisplay(state.currentSpeed);
+      }
+    }
+  }, 1000);
 });

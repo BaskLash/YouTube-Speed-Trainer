@@ -1,24 +1,27 @@
 // YouTube Speed Trainer - Content Script
-// Handles video speed control and completion tracking
+// Supports time-based progression and custom increments
 
 (function() {
   'use strict';
 
-  // Default settings
   const DEFAULTS = {
     currentSpeed: 1.0,
     increment: 0.05,
     minSpeed: 0.5,
     maxSpeed: 4.0,
-    completionThreshold: 0.8 // 80% watched = completed
+    timeThreshold: 600,    // 10 minutes in seconds
+    watchedTime: 0         // Cumulative watch time
   };
 
   let state = {
     currentSpeed: DEFAULTS.currentSpeed,
     increment: DEFAULTS.increment,
+    timeThreshold: DEFAULTS.timeThreshold,
+    watchedTime: DEFAULTS.watchedTime,
     videoId: null,
-    hasIncrementedForVideo: false,
-    lastAppliedSpeed: null
+    lastAppliedSpeed: null,
+    lastTimeUpdate: null,
+    isTracking: false
   };
 
   // Get current video ID from URL
@@ -30,30 +33,38 @@
   // Load settings from storage
   async function loadSettings() {
     return new Promise((resolve) => {
-      chrome.storage.local.get(['currentSpeed', 'increment'], (result) => {
+      chrome.storage.local.get([
+        'currentSpeed', 
+        'increment', 
+        'timeThreshold', 
+        'watchedTime'
+      ], (result) => {
         state.currentSpeed = result.currentSpeed ?? DEFAULTS.currentSpeed;
         state.increment = result.increment ?? DEFAULTS.increment;
+        state.timeThreshold = result.timeThreshold ?? DEFAULTS.timeThreshold;
+        state.watchedTime = result.watchedTime ?? DEFAULTS.watchedTime;
         resolve();
       });
     });
   }
 
-  // Save current speed to storage
-  function saveSpeed(speed) {
-    state.currentSpeed = speed;
-    chrome.storage.local.set({ currentSpeed: speed });
+  // Save state to storage
+  function saveState() {
+    chrome.storage.local.set({
+      currentSpeed: state.currentSpeed,
+      watchedTime: state.watchedTime
+    });
   }
 
-  // Get the video element (with fallbacks)
+  // Get the video element
   function getVideo() {
-    // Try YouTube's main video first
     return document.querySelector('video.html5-main-video') 
         || document.querySelector('video.video-stream')
         || document.querySelector('#movie_player video')
         || document.querySelector('video');
   }
 
-  // Apply speed to video immediately
+  // Apply speed to video
   function applySpeed(video, speed) {
     if (!video) return false;
     
@@ -68,183 +79,243 @@
     return false;
   }
 
-  // Force apply speed (used for real-time updates from popup)
-  function forceApplySpeed(speed) {
-    const video = getVideo();
-    if (video) {
-      video.playbackRate = speed;
-      state.currentSpeed = speed;
-      state.lastAppliedSpeed = speed;
-      console.log(`[Speed Trainer] Speed forced to ${speed.toFixed(2)}x`);
-      return true;
-    }
-    return false;
+  // Format time for display
+  function formatTime(seconds) {
+    seconds = Math.floor(seconds);
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
-  // Check video completion and increment speed if needed
-  function checkCompletion(video) {
-    if (!video || state.hasIncrementedForVideo) return;
-    
-    const progress = video.currentTime / video.duration;
-    
-    if (progress >= DEFAULTS.completionThreshold && video.duration > 60) {
-      // Video is mostly watched and longer than 1 minute
-      const newSpeed = Math.min(DEFAULTS.maxSpeed, state.currentSpeed + state.increment);
-      
-      if (newSpeed !== state.currentSpeed) {
-        saveSpeed(newSpeed);
-        state.hasIncrementedForVideo = true;
-        console.log(`[Speed Trainer] Completed! Next video will play at ${newSpeed.toFixed(2)}x`);
-        
-        // Show brief notification
-        showNotification(`Next video: ${newSpeed.toFixed(2)}×`);
-      }
-    }
-  }
-
-  // Show a brief on-screen notification
-  function showNotification(message) {
-    // Remove any existing notification
+  // Show notification
+  function showNotification(message, type = 'info') {
     const existing = document.getElementById('speed-trainer-notification');
     if (existing) existing.remove();
 
+    const colors = {
+      info: { bg: 'rgba(0, 212, 170, 0.15)', border: 'rgba(0, 212, 170, 0.3)', text: '#00d4aa' },
+      success: { bg: 'rgba(0, 212, 170, 0.2)', border: 'rgba(0, 212, 170, 0.5)', text: '#00d4aa' },
+      levelup: { bg: 'linear-gradient(135deg, rgba(0, 212, 170, 0.3) 0%, rgba(0, 160, 128, 0.2) 100%)', border: 'rgba(0, 212, 170, 0.6)', text: '#00d4aa' }
+    };
+    
+    const style = colors[type] || colors.info;
+
     const notification = document.createElement('div');
     notification.id = 'speed-trainer-notification';
-    notification.textContent = message;
+    notification.innerHTML = message;
     notification.style.cssText = `
       position: fixed;
       top: 80px;
       right: 20px;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: #00d4aa;
-      padding: 12px 20px;
-      border-radius: 8px;
+      background: ${style.bg};
+      color: ${style.text};
+      padding: 14px 20px;
+      border-radius: 10px;
       font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 14px;
       font-weight: 600;
       z-index: 999999;
-      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
-      border: 1px solid rgba(0, 212, 170, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      border: 1px solid ${style.border};
       animation: slideIn 0.3s ease-out;
+      backdrop-filter: blur(10px);
     `;
 
-    // Add animation keyframes
-    const style = document.createElement('style');
-    style.textContent = `
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
       @keyframes slideIn {
         from { transform: translateX(100px); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
       }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(styleEl);
     document.body.appendChild(notification);
 
-    // Remove after 3 seconds
     setTimeout(() => {
       notification.style.animation = 'slideIn 0.3s ease-out reverse';
       setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    }, 3500);
   }
 
-  // Handle video change (new video loaded)
+  // Check if threshold reached and level up
+  function checkAndLevelUp() {
+    if (state.watchedTime >= state.timeThreshold) {
+      const newSpeed = Math.min(DEFAULTS.maxSpeed, state.currentSpeed + state.increment);
+      const roundedSpeed = Math.round(newSpeed * 100) / 100;
+      
+      if (roundedSpeed !== state.currentSpeed) {
+        state.currentSpeed = roundedSpeed;
+        state.watchedTime = 0; // Reset for next level
+        
+        saveState();
+        
+        // Apply new speed immediately
+        const video = getVideo();
+        if (video) {
+          applySpeed(video, roundedSpeed);
+        }
+        
+        showNotification(
+          `⚡ Level Up! <span style="font-size: 18px; margin-left: 8px;">${roundedSpeed.toFixed(2)}×</span>`,
+          'levelup'
+        );
+        
+        console.log(`[Speed Trainer] 🎉 Level up! New speed: ${roundedSpeed.toFixed(2)}x`);
+      } else {
+        // Already at max speed
+        state.watchedTime = 0;
+        saveState();
+        showNotification('Maximum speed reached! 🏆', 'success');
+      }
+    }
+  }
+
+  // Track watch time
+  function trackWatchTime(video) {
+    if (!video || video.paused || video.ended) {
+      state.isTracking = false;
+      return;
+    }
+
+    const now = Date.now();
+    
+    if (state.isTracking && state.lastTimeUpdate) {
+      // Calculate time elapsed since last update
+      const elapsed = (now - state.lastTimeUpdate) / 1000;
+      
+      // Only count if elapsed time is reasonable (< 2 seconds between updates)
+      // This prevents counting time when tab was in background
+      if (elapsed > 0 && elapsed < 2) {
+        state.watchedTime += elapsed;
+        
+        // Check for level up
+        checkAndLevelUp();
+        
+        // Save periodically (every ~5 seconds to reduce writes)
+        if (Math.floor(state.watchedTime) % 5 === 0) {
+          chrome.storage.local.set({ watchedTime: state.watchedTime });
+        }
+      }
+    }
+    
+    state.lastTimeUpdate = now;
+    state.isTracking = true;
+  }
+
+  // Handle video change
   function handleVideoChange() {
     const newVideoId = getVideoId();
     
     if (newVideoId && newVideoId !== state.videoId) {
       state.videoId = newVideoId;
-      state.hasIncrementedForVideo = false;
-      console.log(`[Speed Trainer] New video detected: ${newVideoId}`);
+      state.isTracking = false;
+      state.lastTimeUpdate = null;
+      console.log(`[Speed Trainer] New video: ${newVideoId}`);
     }
   }
 
   // Main update loop
-  async function update() {
+  function update() {
     handleVideoChange();
     
     const video = getVideo();
     if (video) {
       applySpeed(video, state.currentSpeed);
-      checkCompletion(video);
+      trackWatchTime(video);
     }
   }
 
-  // Listen for messages from popup
+  // Message listener for popup communication
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('[Speed Trainer] Received message:', message.type);
+    console.log('[Speed Trainer] Message:', message.type);
     
     const video = getVideo();
     
-    if (message.type === 'GET_STATE') {
-      sendResponse({
-        currentSpeed: state.currentSpeed,
-        increment: state.increment,
-        actualSpeed: video ? video.playbackRate : null,
-        isPlaying: video ? !video.paused : false,
-        hasVideo: !!video,
-        videoId: state.videoId
-      });
-      
-    } else if (message.type === 'SET_SPEED') {
-      const newSpeed = Math.max(DEFAULTS.minSpeed, Math.min(DEFAULTS.maxSpeed, message.speed));
-      state.currentSpeed = newSpeed;
-      chrome.storage.local.set({ currentSpeed: newSpeed });
-      
-      // Apply immediately to video
-      let success = false;
-      let actualSpeed = null;
-      
-      if (video) {
-        video.playbackRate = newSpeed;
-        state.lastAppliedSpeed = newSpeed;
-        actualSpeed = video.playbackRate;
-        success = Math.abs(actualSpeed - newSpeed) < 0.01;
-        console.log(`[Speed Trainer] Speed set to ${newSpeed}x (actual: ${actualSpeed}x)`);
-      } else {
-        console.log(`[Speed Trainer] Speed saved to ${newSpeed}x (no video element)`);
-        success = true; // Saved successfully, will apply when video loads
-      }
-      
-      sendResponse({ success, currentSpeed: newSpeed, actualSpeed });
-      
-    } else if (message.type === 'SET_INCREMENT') {
-      state.increment = message.increment;
-      chrome.storage.local.set({ increment: message.increment });
-      sendResponse({ success: true });
-      
-    } else if (message.type === 'RESET') {
-      state.currentSpeed = DEFAULTS.currentSpeed;
-      state.increment = DEFAULTS.increment;
-      chrome.storage.local.set({ 
-        currentSpeed: DEFAULTS.currentSpeed, 
-        increment: DEFAULTS.increment 
-      });
-      
-      // Apply immediately
-      let success = false;
-      if (video) {
-        video.playbackRate = DEFAULTS.currentSpeed;
-        state.lastAppliedSpeed = DEFAULTS.currentSpeed;
-        success = true;
-      }
-      sendResponse({ success, currentSpeed: DEFAULTS.currentSpeed });
-      
-    } else if (message.type === 'PING') {
-      // Simple ping to check if content script is alive
-      sendResponse({ alive: true, hasVideo: !!video });
+    switch (message.type) {
+      case 'GET_STATE':
+        sendResponse({
+          currentSpeed: state.currentSpeed,
+          increment: state.increment,
+          timeThreshold: state.timeThreshold,
+          watchedTime: state.watchedTime,
+          actualSpeed: video ? video.playbackRate : null,
+          isPlaying: video ? !video.paused : false,
+          hasVideo: !!video,
+          videoId: state.videoId
+        });
+        break;
+        
+      case 'SET_SPEED':
+        const newSpeed = Math.max(DEFAULTS.minSpeed, Math.min(DEFAULTS.maxSpeed, message.speed));
+        state.currentSpeed = newSpeed;
+        chrome.storage.local.set({ currentSpeed: newSpeed });
+        
+        let success = false;
+        let actualSpeed = null;
+        
+        if (video) {
+          video.playbackRate = newSpeed;
+          state.lastAppliedSpeed = newSpeed;
+          actualSpeed = video.playbackRate;
+          success = Math.abs(actualSpeed - newSpeed) < 0.01;
+        } else {
+          success = true;
+        }
+        
+        sendResponse({ success, currentSpeed: newSpeed, actualSpeed });
+        break;
+        
+      case 'SET_INCREMENT':
+        state.increment = message.increment;
+        chrome.storage.local.set({ increment: message.increment });
+        sendResponse({ success: true });
+        break;
+        
+      case 'SET_TIME_THRESHOLD':
+        state.timeThreshold = message.timeThreshold;
+        chrome.storage.local.set({ timeThreshold: message.timeThreshold });
+        sendResponse({ success: true });
+        break;
+        
+      case 'RESET':
+        state.currentSpeed = DEFAULTS.currentSpeed;
+        state.increment = DEFAULTS.increment;
+        state.timeThreshold = DEFAULTS.timeThreshold;
+        state.watchedTime = 0;
+        
+        chrome.storage.local.set({
+          currentSpeed: DEFAULTS.currentSpeed,
+          increment: DEFAULTS.increment,
+          timeThreshold: DEFAULTS.timeThreshold,
+          watchedTime: 0
+        });
+        
+        if (video) {
+          video.playbackRate = DEFAULTS.currentSpeed;
+          state.lastAppliedSpeed = DEFAULTS.currentSpeed;
+        }
+        
+        sendResponse({ success: true });
+        break;
+        
+      case 'PING':
+        sendResponse({ alive: true, hasVideo: !!video });
+        break;
     }
     
-    return true; // Keep message channel open for async response
+    return true;
   });
 
   // Initialize
   async function init() {
     await loadSettings();
     console.log(`[Speed Trainer] Initialized at ${state.currentSpeed.toFixed(2)}x`);
+    console.log(`[Speed Trainer] Time threshold: ${formatTime(state.timeThreshold)}, Watched: ${formatTime(state.watchedTime)}`);
     
-    // Run update loop
+    // Run update loop (500ms for smooth tracking)
     setInterval(update, 500);
     
-    // Also update on URL changes (for SPA navigation)
+    // Watch for URL changes
     let lastUrl = location.href;
     new MutationObserver(() => {
       if (location.href !== lastUrl) {
@@ -252,9 +323,12 @@
         handleVideoChange();
       }
     }).observe(document.body, { subtree: true, childList: true });
+    
+    // Save state before page unload
+    window.addEventListener('beforeunload', saveState);
   }
 
-  // Start when DOM is ready
+  // Start
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

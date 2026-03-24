@@ -1,23 +1,19 @@
 {
   "manifest_version": 3,
   "name": "YouTube Speed Trainer",
-  "version": "1.1",
-  "description": "Gradually train yourself to watch YouTube videos at higher speeds",
+  "version": "1.2",
+  "description": "Train yourself to watch YouTube faster with time-based progression",
   "permissions": ["storage", "activeTab", "tabs", "scripting"],
   "host_permissions": ["https://www.youtube.com/*", "https://youtube.com/*", "https://m.youtube.com/*"],
-    "action": {
+  "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icon16.png",
-      "32": "icon32.png",
-      "48": "icon48.png"
+      "48": "icon.png"
     }
   },
   "icons": {
-    "16": "icon16.png",
-    "32": "icon32.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "48": "icon.png",
+    "128": "icon.png"
   },
   "content_scripts": [
     {
