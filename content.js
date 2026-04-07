@@ -64,19 +64,84 @@
         || document.querySelector('video');
   }
 
-  // Apply speed to video
+  // Check if video is ready to accept playbackRate changes
+  function isVideoReady(video) {
+    if (!video) return false;
+    
+    // Video must have metadata loaded (readyState >= 1)
+    // AND have a valid duration (not NaN, not 0, not Infinity)
+    // AND not be in an error state
+    return video.readyState >= 1 && 
+           video.duration > 0 && 
+           isFinite(video.duration) &&
+           !video.error;
+  }
+
+  // Apply speed to video (only when safe)
   function applySpeed(video, speed) {
     if (!video) return false;
     
+    // CRITICAL: Don't set playbackRate before video is ready
+    // This prevents the black screen / initialization bug
+    if (!isVideoReady(video)) {
+      return false;
+    }
+    
     const targetSpeed = Math.max(DEFAULTS.minSpeed, Math.min(DEFAULTS.maxSpeed, speed ?? state.currentSpeed));
     
-    if (video.playbackRate !== targetSpeed) {
+    // Only update if different (avoid unnecessary writes)
+    if (Math.abs(video.playbackRate - targetSpeed) > 0.001) {
       video.playbackRate = targetSpeed;
       state.lastAppliedSpeed = targetSpeed;
       console.log(`[Speed Trainer] Speed set to ${targetSpeed.toFixed(2)}x`);
       return true;
     }
     return false;
+  }
+
+  // Safely apply speed (used by popup commands)
+  // Waits for video to be ready if necessary
+  function safeApplySpeed(video, speed, callback) {
+    if (!video) {
+      callback?.(false, null);
+      return;
+    }
+    
+    // If already ready, apply immediately
+    if (isVideoReady(video)) {
+      video.playbackRate = speed;
+      state.lastAppliedSpeed = speed;
+      callback?.(true, video.playbackRate);
+      return;
+    }
+    
+    // Otherwise, wait for loadedmetadata event
+    const handler = () => {
+      video.removeEventListener('loadedmetadata', handler);
+      // Small delay to ensure YouTube's player is also ready
+      setTimeout(() => {
+        if (isVideoReady(video)) {
+          video.playbackRate = speed;
+          state.lastAppliedSpeed = speed;
+          callback?.(true, video.playbackRate);
+        } else {
+          callback?.(false, null);
+        }
+      }, 100);
+    };
+    
+    video.addEventListener('loadedmetadata', handler);
+    
+    // Timeout fallback - don't wait forever
+    setTimeout(() => {
+      video.removeEventListener('loadedmetadata', handler);
+      if (isVideoReady(video)) {
+        video.playbackRate = speed;
+        callback?.(true, video.playbackRate);
+      } else {
+        callback?.(false, null);
+      }
+    }, 3000);
   }
 
   // Format time for display
@@ -172,7 +237,8 @@
 
   // Track watch time
   function trackWatchTime(video) {
-    if (!video || video.paused || video.ended) {
+    // Don't track if video isn't ready or isn't playing
+    if (!video || !isVideoReady(video) || video.paused || video.ended) {
       state.isTracking = false;
       return;
     }
@@ -250,19 +316,24 @@
         state.currentSpeed = newSpeed;
         chrome.storage.local.set({ currentSpeed: newSpeed });
         
-        let success = false;
-        let actualSpeed = null;
-        
-        if (video) {
+        // Use safe apply - only set if video is ready
+        if (video && isVideoReady(video)) {
           video.playbackRate = newSpeed;
           state.lastAppliedSpeed = newSpeed;
-          actualSpeed = video.playbackRate;
-          success = Math.abs(actualSpeed - newSpeed) < 0.01;
+          sendResponse({ 
+            success: true, 
+            currentSpeed: newSpeed, 
+            actualSpeed: video.playbackRate 
+          });
         } else {
-          success = true;
+          // Speed saved, will apply when video is ready (via update loop)
+          sendResponse({ 
+            success: true, 
+            currentSpeed: newSpeed, 
+            actualSpeed: null,
+            pending: true 
+          });
         }
-        
-        sendResponse({ success, currentSpeed: newSpeed, actualSpeed });
         break;
         
       case 'SET_INCREMENT':
@@ -290,7 +361,8 @@
           watchedTime: 0
         });
         
-        if (video) {
+        // Only apply if video is ready
+        if (video && isVideoReady(video)) {
           video.playbackRate = DEFAULTS.currentSpeed;
           state.lastAppliedSpeed = DEFAULTS.currentSpeed;
         }
