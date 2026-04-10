@@ -288,6 +288,12 @@
     if (video) {
       applySpeed(video, state.currentSpeed);
       trackWatchTime(video);
+
+      // 👉 NEU: Speed an Background senden
+    chrome.runtime.sendMessage({
+      type: "UPDATE_BADGE",
+      speed: video.playbackRate
+    });
     }
   }
 
