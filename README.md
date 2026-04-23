@@ -6,9 +6,24 @@ A Chrome extension that helps you gradually train yourself to watch YouTube vide
 
 - **Time-Based Progression**: Speed increases based on total watch time, not per video
 - **Custom Increments**: Choose preset values (0.05, 0.10, 0.20) or enter any custom value
+- **Keyboard Shortcuts**: Control speed instantly without opening the popup
 - **Visual Progress Bar**: See your progress toward the next speed level
-- **Instant Speed Control**: Adjust speed anytime via the popup
+- **Instant Speed Control**: Adjust speed anytime via the popup or keyboard
 - **Persistent Settings**: Your progress and settings sync across sessions
+
+## ⌨️ Keyboard Shortcuts
+
+Control playback speed without leaving the video:
+
+| Shortcut | Action |
+|----------|--------|
+| `Alt+Shift+↑` | Increase speed |
+| `Alt+Shift+↓` | Decrease speed |
+| `Alt+Shift+R` | Reset to 1.0× |
+
+**Customize shortcuts:** Go to `chrome://extensions/shortcuts` to set your preferred keys.
+
+A centered speed overlay appears briefly when using shortcuts, so you always know the current speed.
 
 ## 🚀 Installation
 
@@ -57,16 +72,17 @@ Enter any value from 0.01 to 1.00 in the custom input field.
 
 ## 🎯 Tips
 
-1. **Start conservative**: Use small increments (0.03-0.05) if you're new
-2. **Longer thresholds**: Choose 15-30 minute thresholds for podcasts/lectures
-3. **Shorter thresholds**: Choose 5 minute thresholds for quick adaptation
-4. **Manual adjustments**: Use +/- buttons for immediate changes
+1. **Use keyboard shortcuts**: Much faster than opening the popup
+2. **Start conservative**: Use small increments (0.03-0.05) if you're new
+3. **Longer thresholds**: Choose 15-30 minute thresholds for podcasts/lectures
+4. **Shorter thresholds**: Choose 5 minute thresholds for quick adaptation
 
 ## 📁 Files
 
 ```
 youtube-speed-trainer/
 ├── manifest.json    # Extension configuration
+├── background.js    # Keyboard shortcut handler
 ├── content.js       # Video control & time tracking
 ├── popup.html       # Extension popup UI
 ├── popup.js         # Popup logic
@@ -76,6 +92,7 @@ youtube-speed-trainer/
 ## 🔧 Technical Details
 
 - **Manifest V3**: Latest Chrome extension format
+- **Commands API**: Native Chrome keyboard shortcuts
 - **Time Tracking**: Accurate to 0.5 seconds, ignores background tabs
 - **Storage**: chrome.storage.local for persistence
 - **Speed Range**: 0.5× to 4.0×
@@ -88,6 +105,15 @@ This extension:
 - Only stores your settings locally in Chrome
 
 ## 📝 Changelog
+
+### v1.4
+- ✨ Keyboard shortcuts (Alt+Shift+↑/↓/R)
+- ✨ Centered speed overlay for visual feedback
+- ✨ Customizable shortcuts via Chrome settings
+
+### v1.3
+- 🐛 Fixed black screen bug when video initializes
+- 🔧 Added video readiness checks
 
 ### v1.2
 - ✨ Time-based progression (replaces per-video)

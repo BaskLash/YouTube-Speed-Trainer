@@ -5,9 +5,6 @@
   "description": "Train yourself to watch YouTube faster with time-based progression",
   "permissions": ["storage", "activeTab", "tabs", "scripting"],
   "host_permissions": ["https://www.youtube.com/*", "https://youtube.com/*", "https://m.youtube.com/*"],
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -22,6 +19,32 @@
     "48": "icon48.png",
     "64": "icon96.png",
     "128": "icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "increase-speed": {
+      "suggested_key": {
+        "default": "Alt+Shift+Up",
+        "mac": "Alt+Shift+Up"
+      },
+      "description": "Increase playback speed"
+    },
+    "decrease-speed": {
+      "suggested_key": {
+        "default": "Alt+Shift+Down",
+        "mac": "Alt+Shift+Down"
+      },
+      "description": "Decrease playback speed"
+    },
+    "reset-speed": {
+      "suggested_key": {
+        "default": "Alt+Shift+R",
+        "mac": "Alt+Shift+R"
+      },
+      "description": "Reset speed to 1.0x"
+    }
   },
   "content_scripts": [
     {

@@ -160,7 +160,8 @@
     const colors = {
       info: { bg: 'rgba(0, 212, 170, 0.15)', border: 'rgba(0, 212, 170, 0.3)', text: '#00d4aa' },
       success: { bg: 'rgba(0, 212, 170, 0.2)', border: 'rgba(0, 212, 170, 0.5)', text: '#00d4aa' },
-      levelup: { bg: 'linear-gradient(135deg, rgba(0, 212, 170, 0.3) 0%, rgba(0, 160, 128, 0.2) 100%)', border: 'rgba(0, 212, 170, 0.6)', text: '#00d4aa' }
+      levelup: { bg: 'linear-gradient(135deg, rgba(0, 212, 170, 0.3) 0%, rgba(0, 160, 128, 0.2) 100%)', border: 'rgba(0, 212, 170, 0.6)', text: '#00d4aa' },
+      speed: { bg: 'rgba(0, 0, 0, 0.85)', border: 'rgba(0, 212, 170, 0.5)', text: '#00d4aa' }
     };
     
     const style = colors[type] || colors.info;
@@ -196,10 +197,122 @@
     document.head.appendChild(styleEl);
     document.body.appendChild(notification);
 
+    // Shorter duration for speed notifications
+    const duration = type === 'speed' ? 1500 : 3500;
+
     setTimeout(() => {
       notification.style.animation = 'slideIn 0.3s ease-out reverse';
       setTimeout(() => notification.remove(), 300);
-    }, 3500);
+    }, duration);
+  }
+
+  // Show speed overlay (centered, large, brief)
+  function showSpeedOverlay(speed, direction) {
+    const existing = document.getElementById('speed-trainer-overlay');
+    if (existing) existing.remove();
+
+    const arrow = direction === 'up' ? '↑' : direction === 'down' ? '↓' : '';
+    const color = direction === 'up' ? '#00d4aa' : direction === 'down' ? '#ff6b6b' : '#00d4aa';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'speed-trainer-overlay';
+    overlay.innerHTML = `
+      <div style="font-size: 14px; opacity: 0.7; margin-bottom: 4px;">Speed</div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+        ${arrow ? `<span style="color: ${color}; font-size: 24px;">${arrow}</span>` : ''}
+        <span style="font-size: 48px; font-weight: 700;">${speed.toFixed(2)}×</span>
+      </div>
+    `;
+    overlay.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      padding: 24px 40px;
+      border-radius: 16px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      text-align: center;
+      z-index: 9999999;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      border: 2px solid ${color};
+      animation: speedPop 0.2s ease-out forwards;
+      pointer-events: none;
+    `;
+
+    // Add animation
+    const styleEl = document.createElement('style');
+    styleEl.id = 'speed-trainer-overlay-style';
+    styleEl.textContent = `
+      @keyframes speedPop {
+        0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      }
+      @keyframes speedFade {
+        0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+      }
+    `;
+    
+    // Remove old style if exists
+    const oldStyle = document.getElementById('speed-trainer-overlay-style');
+    if (oldStyle) oldStyle.remove();
+    
+    document.head.appendChild(styleEl);
+    document.body.appendChild(overlay);
+
+    // Fade out after 800ms
+    setTimeout(() => {
+      overlay.style.animation = 'speedFade 0.3s ease-out forwards';
+      setTimeout(() => overlay.remove(), 300);
+    }, 800);
+  }
+
+  // Change speed by increment (used by keyboard shortcuts)
+  function changeSpeedByIncrement(direction) {
+    const video = getVideo();
+    const delta = direction === 'up' ? state.increment : -state.increment;
+    const newSpeed = Math.max(DEFAULTS.minSpeed, Math.min(DEFAULTS.maxSpeed, state.currentSpeed + delta));
+    const roundedSpeed = Math.round(newSpeed * 100) / 100;
+    
+    if (roundedSpeed === state.currentSpeed) {
+      // At limit, show current speed anyway
+      showSpeedOverlay(roundedSpeed, null);
+      return { success: false, speed: roundedSpeed, reason: 'at_limit' };
+    }
+    
+    state.currentSpeed = roundedSpeed;
+    chrome.storage.local.set({ currentSpeed: roundedSpeed });
+    
+    // Apply if video is ready
+    if (video && isVideoReady(video)) {
+      video.playbackRate = roundedSpeed;
+      state.lastAppliedSpeed = roundedSpeed;
+    }
+    
+    // Show overlay
+    showSpeedOverlay(roundedSpeed, direction);
+    
+    console.log(`[Speed Trainer] Keyboard: Speed ${direction} to ${roundedSpeed.toFixed(2)}x`);
+    return { success: true, speed: roundedSpeed };
+  }
+
+  // Reset speed to default (used by keyboard shortcut)
+  function resetSpeedToDefault() {
+    const video = getVideo();
+    state.currentSpeed = DEFAULTS.currentSpeed;
+    
+    chrome.storage.local.set({ currentSpeed: DEFAULTS.currentSpeed });
+    
+    if (video && isVideoReady(video)) {
+      video.playbackRate = DEFAULTS.currentSpeed;
+      state.lastAppliedSpeed = DEFAULTS.currentSpeed;
+    }
+    
+    showSpeedOverlay(DEFAULTS.currentSpeed, null);
+    console.log(`[Speed Trainer] Keyboard: Speed reset to ${DEFAULTS.currentSpeed}x`);
+    return { success: true, speed: DEFAULTS.currentSpeed };
   }
 
   // Check if threshold reached and level up
@@ -288,16 +401,10 @@
     if (video) {
       applySpeed(video, state.currentSpeed);
       trackWatchTime(video);
-
-      // 👉 NEU: Speed an Background senden
-    chrome.runtime.sendMessage({
-      type: "UPDATE_BADGE",
-      speed: video.playbackRate
-    });
     }
   }
 
-  // Message listener for popup communication
+  // Message listener for popup and keyboard commands
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Speed Trainer] Message:', message.type);
     
@@ -378,6 +485,27 @@
         
       case 'PING':
         sendResponse({ alive: true, hasVideo: !!video });
+        break;
+      
+      // Keyboard command handling
+      case 'KEYBOARD_COMMAND':
+        let result;
+        switch (message.command) {
+          case 'increase-speed':
+            result = changeSpeedByIncrement('up');
+            sendResponse(result);
+            break;
+          case 'decrease-speed':
+            result = changeSpeedByIncrement('down');
+            sendResponse(result);
+            break;
+          case 'reset-speed':
+            result = resetSpeedToDefault();
+            sendResponse(result);
+            break;
+          default:
+            sendResponse({ success: false, reason: 'unknown_command' });
+        }
         break;
     }
     

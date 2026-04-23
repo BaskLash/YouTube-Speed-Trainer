@@ -444,6 +444,50 @@
     .mode-label.active {
       color: #00d4aa;
     }
+
+    /* Keyboard shortcuts info */
+    .shortcuts-info {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .shortcuts-title {
+      font-size: 10px;
+      color: #666;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .shortcut-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .shortcut-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      background: rgba(255,255,255,0.08);
+      padding: 3px 6px;
+      border-radius: 4px;
+      color: #888;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .shortcut-desc {
+      font-size: 10px;
+      color: #555;
+    }
+
+    .shortcut-hint {
+      font-size: 8px;
+      color: #444;
+      text-align: center;
+      margin-top: 8px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -519,6 +563,24 @@
     <div class="status">
       <div class="status-dot" id="status-dot"></div>
       <span id="status-text">Not on YouTube</span>
+    </div>
+
+    <!-- Keyboard shortcuts info -->
+    <div class="shortcuts-info">
+      <div class="shortcuts-title">⌨️ Keyboard Shortcuts</div>
+      <div class="shortcut-row">
+        <span class="shortcut-key">Alt+Shift+↑</span>
+        <span class="shortcut-desc">Speed up</span>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-key">Alt+Shift+↓</span>
+        <span class="shortcut-desc">Slow down</span>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-key">Alt+Shift+R</span>
+        <span class="shortcut-desc">Reset</span>
+      </div>
+      <div class="shortcut-hint">Customize in chrome://extensions/shortcuts</div>
     </div>
   </div>
 
