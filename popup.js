@@ -373,6 +373,12 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Reset button
   document.getElementById('btn-reset').addEventListener('click', reset);
+
+  // Customize shortcuts link — chrome:// URLs require chrome.tabs.create
+  document.getElementById('customize-shortcuts').addEventListener('click', (e) => {
+    e.preventDefault();
+    chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+  });
   
   // Periodic progress update while popup is open
   setInterval(async () => {

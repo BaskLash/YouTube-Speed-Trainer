@@ -122,17 +122,32 @@
 
     .speed-btn {
       flex: 1;
-      height: 44px;
+      height: 52px;
       border: none;
       border-radius: 10px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 18px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2px;
+      padding: 6px 0;
+    }
+
+    .speed-btn .btn-symbol {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .speed-btn .btn-kbd {
+      font-size: 9px;
+      font-weight: 500;
+      opacity: 0.7;
+      letter-spacing: 0.5px;
+      line-height: 1;
     }
 
     .speed-btn.decrease {
@@ -359,12 +374,23 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+      padding: 0 12px;
+      position: relative;
     }
 
     .reset-btn:hover {
       background: rgba(255, 82, 82, 0.1);
       border-color: rgba(255, 82, 82, 0.3);
       color: #ff5252;
+    }
+
+    .reset-btn .reset-kbd {
+      position: absolute;
+      right: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      opacity: 0.6;
+      letter-spacing: 0.3px;
     }
 
     /* Status indicator */
@@ -445,48 +471,21 @@
       color: #00d4aa;
     }
 
-    /* Keyboard shortcuts info */
-    .shortcuts-info {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .shortcuts-title {
-      font-size: 10px;
-      color: #666;
-      margin-bottom: 8px;
+    /* Customize shortcuts footer link */
+    .shortcuts-footer {
+      margin-top: 10px;
       text-align: center;
     }
 
-    .shortcut-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-
-    .shortcut-key {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      background: rgba(255,255,255,0.08);
-      padding: 3px 6px;
-      border-radius: 4px;
-      color: #888;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .shortcut-desc {
+    .shortcuts-footer a {
       font-size: 10px;
       color: #555;
+      text-decoration: none;
+      transition: color 0.2s ease;
     }
 
-    .shortcut-hint {
-      font-size: 8px;
-      color: #444;
-      text-align: center;
-      margin-top: 8px;
-      font-style: italic;
+    .shortcuts-footer a:hover {
+      color: #00d4aa;
     }
   </style>
 </head>
@@ -506,8 +505,14 @@
     </div>
 
     <div class="speed-controls">
-      <button class="speed-btn decrease" id="btn-decrease">−</button>
-      <button class="speed-btn increase" id="btn-increase">+</button>
+      <button class="speed-btn decrease" id="btn-decrease" title="Slow down (Alt+Shift+↓)">
+        <span class="btn-symbol">−</span>
+        <span class="btn-kbd">Alt ⇧ ↓</span>
+      </button>
+      <button class="speed-btn increase" id="btn-increase" title="Speed up (Alt+Shift+↑)">
+        <span class="btn-symbol">+</span>
+        <span class="btn-kbd">Alt ⇧ ↑</span>
+      </button>
     </div>
 
     <!-- Progress toward next speed increase -->
@@ -552,12 +557,13 @@
       </div>
     </div>
 
-    <button class="reset-btn" id="btn-reset">
+    <button class="reset-btn" id="btn-reset" title="Reset all (Alt+Shift+R)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
         <path d="M3 3v5h5"/>
       </svg>
       Reset All
+      <span class="reset-kbd">Alt+⇧+R</span>
     </button>
 
     <div class="status">
@@ -565,22 +571,8 @@
       <span id="status-text">Not on YouTube</span>
     </div>
 
-    <!-- Keyboard shortcuts info -->
-    <div class="shortcuts-info">
-      <div class="shortcuts-title">⌨️ Keyboard Shortcuts</div>
-      <div class="shortcut-row">
-        <span class="shortcut-key">Alt+Shift+↑</span>
-        <span class="shortcut-desc">Speed up</span>
-      </div>
-      <div class="shortcut-row">
-        <span class="shortcut-key">Alt+Shift+↓</span>
-        <span class="shortcut-desc">Slow down</span>
-      </div>
-      <div class="shortcut-row">
-        <span class="shortcut-key">Alt+Shift+R</span>
-        <span class="shortcut-desc">Reset</span>
-      </div>
-      <div class="shortcut-hint">Customize in chrome://extensions/shortcuts</div>
+    <div class="shortcuts-footer">
+      <a href="#" id="customize-shortcuts">⌨ Customize keyboard shortcuts</a>
     </div>
   </div>
 
